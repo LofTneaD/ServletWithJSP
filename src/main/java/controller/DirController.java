@@ -71,7 +71,7 @@ public class DirController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         SessionController.getInstance().deleteSession(req.getSession().getId());
-        resp.sendRedirect("/ServletWithJSP_war/");
+        resp.sendRedirect("/ServletWithJSP_1_0_SNAPSHOT_war/");
     }
 
     private void printDirectory(HttpServletRequest req, String path, String login) {
