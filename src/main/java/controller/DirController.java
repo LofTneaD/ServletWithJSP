@@ -1,4 +1,6 @@
-package servlet;
+package controller;
+
+import dbService.dataSets.UsersDataSet;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -11,21 +13,35 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-@WebServlet("/")
-public class DirServlet extends HttpServlet {
+@WebServlet("/explorer")
+public class DirController extends HttpServlet {
 
-    private String defaultFolder = "C:/UserDirs/";
+    private String userPath = "servlet/users/";
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
+        UsersDataSet userProfile = SessionController.getInstance().getUserBySessionId(req.getSession().getId());
+        String login = userProfile.getLogin();
+
+        req.setAttribute("name", "Hi, " + login);
+
+        userPath = "C:/UserDirs/";
+        userPath += login;
+
         String path = req.getParameter("path");
-        path = path == null ? defaultFolder : path;
+        path = path == null ? userPath : path;
 
 
         Path spath = Paths.get(path);
         File file = spath.toFile();
+
+
+        File dir = new File(userPath);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
 
         if (file.isFile()) {
             resp.setHeader("Content-Type", "application/octet-stream");
@@ -43,59 +59,51 @@ public class DirServlet extends HttpServlet {
 
             inStream.close();
             outStream.close();
-        }
+        } else {
+            printDirectory(req, (path == null || !path.contains(userPath + login)) ? (userPath) : path, login);
 
-        else {
-            printDirectory(req, path == null ? defaultFolder : path);
-
+            req.setAttribute("name", userPath);
             req.setAttribute("now", new Date());
-            req.setAttribute("name", "Directories");
             req.getRequestDispatcher("explorer.jsp").forward(req, resp);
         }
     }
 
-    private void printDirectory(HttpServletRequest req, String path) {
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        SessionController.getInstance().deleteSession(req.getSession().getId());
+        resp.sendRedirect("/ServletWithJSP_war/");
+    }
+
+    private void printDirectory(HttpServletRequest req, String path, String login) {
         StringBuilder attrFiles = new StringBuilder();
         StringBuilder attrFolders = new StringBuilder();
-
-        if (path.contains("/"))
-            addDirectory(attrFolders, path.substring(0, path.lastIndexOf('/')), "return", 0, 0);
+        if (path.lastIndexOf('/') != path.indexOf('/') && !path.substring(path.lastIndexOf('/') + 1).equals(login))
+            addFile(true, attrFolders, path.substring(0, path.lastIndexOf('/')), "return", 0, 0);
 
         File[] files = new File(path).listFiles();
-
         if (files == null || files.length == 0)
             return;
 
         for (File file : files) {
             if (file.isDirectory())
-                addDirectory(attrFolders, path + "/" + file.getName(), file.getName(), file.lastModified(), file.length());
-
+                addFile(true, attrFolders, path + "/" + file.getName(), file.getName(), file.lastModified(), file.length());
             else
-                addFile(attrFiles, file.getName(), file.lastModified(), file.length(), path);
+                addFile(false, attrFiles, path, file.getName(), file.lastModified(), file.length());
         }
-
         req.setAttribute("folders", attrFolders);
         req.setAttribute("files", attrFiles);
     }
 
+    private void addFile(boolean isDir, StringBuilder attrFiles, String path, String text, long date, long length) {
+        if (isDir) {
+            attrFiles.append("<tr><td><img src=\"https://icons.iconarchive.com/icons/hopstarter/sleek-xp-basic/16/Folder-icon.png\"><a href=\"?path=")
+                    .append(path);
+        } else {
+            attrFiles.append("<tr><td><a href=\"?path=")
+                    .append(path + "/" + text);
+        }
 
-    private void addDirectory(StringBuilder attrFiles, String path, String text, long date, long length) {
-        attrFiles.append("<tr><td><img src=\"https://icons.iconarchive.com/icons/hopstarter/sleek-xp-basic/16/Folder-icon.png\"><a href=\"?path=")
-                .append(path)
-                .append("\">")
-                .append(text)
-                .append("</a></td><td>")
-                .append(length)
-                .append(" Bytes")
-                .append("</td><td>")
-                .append(new SimpleDateFormat("MM.dd.yyyy HH:mm:ss").format(new Date(date)))
-                .append("</td>");
-    }
-
-    private void addFile(StringBuilder attrFiles, String text, long date, long length, String path) {
-        attrFiles.append("<tr><td><a href=\"?path=")
-                .append(path + "/" + text)
-                .append("\">")
+        attrFiles.append("\">")
                 .append(text)
                 .append("</a></td><td>")
                 .append(length)
