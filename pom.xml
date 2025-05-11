@@ -10,6 +10,7 @@
         <tomcat.version>10.1.39</tomcat.version>
         <servlet.version>5.0.0</servlet.version>
         <jsp.version>3.0.0</jsp.version>
+        <hibernate.version>4.3.8.Final</hibernate.version>
     </properties>
     <dependencies>
         <!--  Jakarta Servlet API  -->
@@ -41,6 +42,12 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.13.0</version>
+        </dependency>
+        <!-- Hibernate Core -->
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>${hibernate.version}</version>
         </dependency>
     </dependencies>
     <build>

@@ -1,6 +1,6 @@
 package controller;
 
-import dbService.dataSets.UsersDataSet;
+import dbService.data.UserProfile;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -22,7 +22,7 @@ public class DirController extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        UsersDataSet userProfile = SessionController.getInstance().getUserBySessionId(req.getSession().getId());
+        UserProfile userProfile = SessionController.getInstance().getUserBySessionId(req.getSession().getId());
         String login = userProfile.getLogin();
 
         req.setAttribute("name", "Hi, " + login);
@@ -60,7 +60,7 @@ public class DirController extends HttpServlet {
             inStream.close();
             outStream.close();
         } else {
-            printDirectory(req, (path == null || !path.contains(userPath + login)) ? (userPath) : path, login);
+            printDirectory(req, (path == null || !path.contains(userPath)) ? (userPath) : path, login);
 
             req.setAttribute("name", userPath);
             req.setAttribute("now", new Date());

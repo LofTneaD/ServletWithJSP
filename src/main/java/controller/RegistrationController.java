@@ -2,7 +2,7 @@ package controller;
 
 import dbService.DBException;
 import dbService.DBService;
-import dbService.dataSets.UsersDataSet;
+import dbService.data.UserProfile;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -30,12 +30,8 @@ public class RegistrationController extends HttpServlet {
 
         clearErrors(req);
 
-        boolean errorStatus = false;
-        try {
-            errorStatus = checkErrors(req, login, password, passwordConfirm, email);
-        } catch (DBException e) {
-            e.printStackTrace();
-        }
+        boolean errorStatus;
+        errorStatus = checkErrors(req, login, password, passwordConfirm, email);
 
         if (errorStatus) {
             req.setAttribute("login", login);
@@ -44,19 +40,15 @@ public class RegistrationController extends HttpServlet {
             req.setAttribute("email", email);
             req.getRequestDispatcher("registration.jsp").forward(req, resp);
         } else {
-            UsersDataSet userProfile = new UsersDataSet(login, password, email);
+            UserProfile userProfile = new UserProfile(login, password, email);
 
-            try {
-                dbService.addUser(userProfile);
-            } catch (DBException e) {
-                e.printStackTrace();
-            }
+            dbService.addUser(userProfile);
             resp.sendRedirect("/ServletWithJSP_1_0_SNAPSHOT_war/");
         }
     }
 
     private boolean checkErrors(HttpServletRequest req, String login, String firstPassword, String secondPassword,
-                                String email) throws DBException {
+                                String email) {
 
         if (login == null || login.equals("")) {
             req.setAttribute("loginErr", "Поле не заполнено");
@@ -68,9 +60,10 @@ public class RegistrationController extends HttpServlet {
             req.setAttribute("emailErr", "Поле не заполнено");
         } else if (!firstPassword.equals(secondPassword)) {
             req.setAttribute("pass2Err", "Пароли не совпадают");
-        } else if (dbService.getUser(login).getLogin() != null) {
+        } else if (dbService.getUser(login) != null) {
             req.setAttribute("loginErr", "Данный логин уже существует");
-        } else return false;
+        } else
+            return false;
         return true;
     }
 

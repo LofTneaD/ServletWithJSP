@@ -3,7 +3,7 @@ package controller;
 
 import dbService.DBException;
 import dbService.DBService;
-import dbService.dataSets.UsersDataSet;
+import dbService.data.UserProfile;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -19,7 +19,7 @@ public class EntryController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        UsersDataSet userProfile = SessionController.getInstance().getUserBySessionId(req.getSession().getId());
+        UserProfile userProfile = SessionController.getInstance().getUserBySessionId(req.getSession().getId());
         if (userProfile != null) {
             resp.sendRedirect("/ServletWithJSP_1_0_SNAPSHOT_war/explorer");
             return;
@@ -47,11 +47,10 @@ public class EntryController extends HttpServlet {
             req.setAttribute("pass", password);
             req.getRequestDispatcher("index.jsp").forward(req, resp);
         } else {
-            UsersDataSet userProfile = null;
-            try {
-                userProfile = dbService.getUser(login);
-            } catch (DBException e) {
-                e.printStackTrace();
+            UserProfile userProfile = dbService.getUser(login);
+            if (userProfile == null || !userProfile.getPassword().equals(password)) {
+                req.getRequestDispatcher("registration.jsp").forward(req, resp);
+                return;
             }
             SessionController.getInstance().addSession(req.getSession().getId(), userProfile);
             resp.sendRedirect("/ServletWithJSP_1_0_SNAPSHOT_war/explorer");
@@ -64,9 +63,11 @@ public class EntryController extends HttpServlet {
             req.setAttribute("loginErr", "Поле не заполнено");
         } else if (password == null || password.equals("")) {
             req.setAttribute("passErr", "Поле не заполнено");
-        } else if (!dbService.checkUserExists(login)) {
+        }
+        else if (dbService.getUser(login) == null) {
             req.setAttribute("loginErr", "Аккаунта с таким логином не существует");
-        } else if (!dbService.getUser(login).getPassword().equals(password)) {
+        }
+        else if (!dbService.getUser(login).getPassword().equals(password)) {
             req.setAttribute("passErr", "Неверный пароль");
         } else return false;
         return true;
